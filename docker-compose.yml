@@ -1,0 +1,51 @@
+version: "3.5"
+services:
+  api:
+    build:
+      dockerfile: docker/api.base.dockerfile
+      context: .
+    image: api.base:latest
+
+  # test container and db
+  test_api:
+    depends_on:
+      - api
+      - test_db
+    links:
+      - test_db
+    build:
+      dockerfile: docker/api.test.dockerfile
+      context: .
+    image: api.test:latest
+    volumes:
+    - ./:/api
+    - ./docker/secrets.test.py:/api_secrets.py
+  test_db:
+    image: postgres:11.5
+    environment:
+      POSTGRES_DB: imports
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  # development container and db
+  dev_api:
+    depends_on:
+      - api
+    image: api.base:latest
+    links:
+      - dev_db
+    volumes:
+      - ./:/api
+      - ./docker/secrets.dev.py:/api_secrets.py
+    working_dir: /api
+    command: python manage.py runserver 0.0.0.0:8080
+    environment:
+      PYTHONPATH: '/:$PYTHONPATH'
+    ports:
+      - 8080:8080
+  dev_db:
+    image: postgres:11.5
+    environment:
+      POSTGRES_DB: imports
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
