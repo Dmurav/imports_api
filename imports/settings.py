@@ -32,6 +32,10 @@ def settings():
     ]
 
     INSTALLED_APPS += [
+        'rest_framework',
+    ]
+
+    INSTALLED_APPS += [
         'imports.api'
     ]
 

@@ -18,12 +18,14 @@ services:
       context: .
     image: api.test:latest
     volumes:
-    - ./:/api
+    - ./:/project
     - ./docker/secrets.test.py:/api_secrets.py
+    working_dir: /project
+    environment:
+      PYTHONPATH: '/:/project:$PYTHONPATH'
   test_db:
     image: postgres:11.5
     environment:
-      POSTGRES_DB: imports
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
 
@@ -35,12 +37,12 @@ services:
     links:
       - dev_db
     volumes:
-      - ./:/api
+      - ./:/project
       - ./docker/secrets.dev.py:/api_secrets.py
-    working_dir: /api
-    command: python manage.py runserver 0.0.0.0:8080
+    working_dir: /project
+    command: python imports/manage.py runserver 0.0.0.0:8080
     environment:
-      PYTHONPATH: '/:$PYTHONPATH'
+      PYTHONPATH: '/:/project:$PYTHONPATH'
     ports:
       - 8080:8080
   dev_db:
