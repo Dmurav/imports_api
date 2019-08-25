@@ -22,7 +22,8 @@ class NoUnknownFieldsSerializer(serializers.Serializer):
     _unknown_fields = None
 
     def to_internal_value(self, data):
-        self._unknown_fields = set(data.keys()) - set(self.fields.keys())
+        if isinstance(data, dict):
+            self._unknown_fields = set(data.keys()) - set(self.fields.keys())
         return super().to_internal_value(data)
 
     def validate(self, data):
