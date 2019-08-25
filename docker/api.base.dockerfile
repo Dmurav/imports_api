@@ -8,4 +8,4 @@ COPY Pipfile Pipfile.lock /
 RUN pip install pipenv && \
     pipenv install --deploy --system
 
-COPY imports/ /project/
+COPY imports/ /project/imports
