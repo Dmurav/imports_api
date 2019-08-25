@@ -15,6 +15,7 @@ services:
     links:
       - db
     command: python imports/manage.py runserver 0.0.0.0:8080
+    working_dir: /project
   db:
     image: postgres:11.5
     env_file:
