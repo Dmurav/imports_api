@@ -3,6 +3,10 @@ from api_secrets import secrets
 
 
 def settings():
+    REST_FRAMEWORK = {
+        'TEST_REQUEST_DEFAULT_FORMAT': 'json'
+    }
+
     SECRET_SETTINGS_MODULE = '/etc/imports/secrets.py'
 
     # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -18,7 +22,6 @@ def settings():
     DEBUG = True
 
     ALLOWED_HOSTS = []
-
 
     # Application definition
 
@@ -87,7 +90,6 @@ def settings():
         },
     ]
 
-
     # Internationalization
     # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
@@ -100,7 +102,6 @@ def settings():
     USE_L10N = True
 
     USE_TZ = True
-
 
     # Static files (CSS, JavaScript, Images)
     # https://docs.djangoproject.com/en/2.2/howto/static-files/

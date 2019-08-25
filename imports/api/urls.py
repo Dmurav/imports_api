@@ -1,7 +1,7 @@
 from django.urls import re_path
 
-from api.views import (CreateDataSetView, DataSetCitizenView, ListDataSetCitizensView,
-                       DataSetBirthdaysView, DataSetAgePercentiles, )
+from imports.api.views import (CreateDataSetView, DataSetCitizenView, ListDataSetCitizensView,
+                               DataSetBirthdaysView, DataSetAgePercentiles, )
 
 urlpatterns = [
     re_path(r'^imports/?$',
