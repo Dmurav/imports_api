@@ -25,7 +25,7 @@ class CreateDataSetView(APIView):
 
 
 
-class DataSetCitizenView(APIView):
+class UpdateCitizenView(APIView):
     def patch(self, request, *args, **kwargs):
         data = {
             'args': args,

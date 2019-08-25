@@ -48,5 +48,8 @@ class Citizen(CreatedUpdatedMixin, models.Model):
 class CitizenRelative(CreatedUpdatedMixin, models.Model):
     class Meta:
         unique_together = (('citizen', 'relative'),)
-    citizen = models.ForeignKey('Citizen', null=False, on_delete=models.CASCADE, related_name='to_citizen_relatives')
-    relative = models.ForeignKey('Citizen', null=False, on_delete=models.CASCADE, related_name='from_citizen_relatives')
+
+    citizen = models.ForeignKey('Citizen', null=False, on_delete=models.CASCADE,
+                                related_name='to_citizen_relatives')
+    relative = models.ForeignKey('Citizen', null=False, on_delete=models.CASCADE,
+                                 related_name='from_citizen_relatives')

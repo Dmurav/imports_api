@@ -1,6 +1,6 @@
 from django.urls import re_path
 
-from imports.api.views import (CreateDataSetView, DataSetCitizenView, ListDataSetCitizensView,
+from imports.api.views import (CreateDataSetView, UpdateCitizenView, ListDataSetCitizensView,
                                DataSetBirthdaysView, DataSetAgePercentiles, )
 
 urlpatterns = [
@@ -11,7 +11,7 @@ urlpatterns = [
             ListDataSetCitizensView.as_view(),
             name='list_citizens'),
     re_path(r'^imports/(?P<dataset_id>\d+)/citizens/(?P<citizen_id>\d+)/?$',
-            DataSetCitizenView.as_view(),
+            UpdateCitizenView.as_view(),
             name='update_citizen'),
     re_path(r'^imports/(?P<dataset_id>\d+)/citizens/birthdays/?$',
             DataSetBirthdaysView.as_view(),

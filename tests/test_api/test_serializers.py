@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 import pytest
 from hamcrest import assert_that, has_entries
 
-from imports.api.serializers import CreateCitizenSerializer, CreateDataSetSerializer
+from imports.api.serializers import CritizenSerializer, CreateDataSetSerializer
 from imports.utils import latin_russian_digit
 
 
@@ -15,14 +15,14 @@ def test_latin_russian_digit():
                                    '123456789')
 
 
-class TestCreateCitizenSerializer:
+class TestCitizenSerializer:
     @pytest.fixture()
     def citizen(self, citizens):
         """Valid citizen data."""
         return citizens[0]
 
     def test_valid_data(self, citizen):
-        s = CreateCitizenSerializer(data=citizen)
+        s = CritizenSerializer(data=citizen)
         s.is_valid()
         assert_that(s.validated_data, has_entries({
             'citizen_id': 1,
@@ -125,9 +125,25 @@ class TestCreateCitizenSerializer:
         elif action == 'delete':
             citizen.pop(field, None)
 
-        s = CreateCitizenSerializer(data=citizen)
+        s = CritizenSerializer(data=citizen)
         assert is_valid == s.is_valid(raise_exception=False)
 
+    @pytest.mark.parametrize('data', [
+        {'citizen_id': 1},
+        {'town': 'Москва', 'birth_date': '23.03.1990'},
+        {'apartment': 4},
+    ])
+    def test_partial_data_validation(self, data):
+        s = CritizenSerializer(data=data, partial=True)
+        assert s.is_valid(raise_exception=False)
+
+    def test_partial_requires_at_least_one_field(self):
+        s = CritizenSerializer(data={}, partial=True)
+        assert not s.is_valid(raise_exception=False)
+
+    def test_partial_unknown_fields(self):
+        s = CritizenSerializer(data={'unknown': 1}, partial=True)
+        assert not s.is_valid(raise_exception=False)
 
 class TestDataSetSerializer:
     def test_valid(self, citizens):

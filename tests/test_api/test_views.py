@@ -21,8 +21,14 @@ def data_sets(mocker):
 
 
 class TestCreateDataSetView:
-    def test_normal_request(self, api_client, citizens, data_sets):
-        url = reverse('create_dataset')
+    @pytest.fixture
+    def url(self):
+        return reverse('create_dataset')
+
+    def test_url(self, url):
+        assert url == '/imports'
+
+    def test_normal_request(self, api_client, citizens, data_sets, url):
         data = {
             'citizens': citizens,
         }
@@ -56,3 +62,7 @@ class TestCreateDataSetView:
         assert_that(response, has_properties({
             'status_code': status.HTTP_400_BAD_REQUEST,
         }))
+
+
+class TestUpdateCitizenView():
+    pass

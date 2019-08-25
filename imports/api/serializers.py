@@ -32,7 +32,7 @@ class NoUnknownFieldsSerializer(serializers.Serializer):
         return super().validate(data)
 
 
-class CreateCitizenSerializer(NoUnknownFieldsSerializer):
+class CritizenSerializer(NoUnknownFieldsSerializer):
     citizen_id = serializers.IntegerField(required=True, validators=[validate_non_negative])
 
     town = serializers.CharField(required=True,
@@ -60,16 +60,24 @@ class CreateCitizenSerializer(NoUnknownFieldsSerializer):
 
     relatives = serializers.ListField(child=serializers.IntegerField(), allow_empty=True)
 
-    def validate(self, data):
-        if data['birth_date'] >= datetime.utcnow().date():
+    def validate_birth_date(self, value):
+        if value >= datetime.utcnow().date():
             raise serializers.ValidationError('Birth date must be less then current date.')
-        if data['citizen_id'] in data['relatives']:
+        return value
+
+    def validate(self, data):
+        if not data:
+            raise serializers.ValidationError('At last one field required')
+
+        citizen_id = data.get('citizen_id')
+        relatives = data.get('relatives')
+        if citizen_id and relatives and citizen_id in relatives:
             raise serializers.ValidationError('Citizen can not be relative to itself.')
         return super().validate(data)
 
 
 class CreateDataSetSerializer(NoUnknownFieldsSerializer):
-    citizens = serializers.ListSerializer(child=CreateCitizenSerializer(),
+    citizens = serializers.ListSerializer(child=CritizenSerializer(),
                                           allow_null=False,
                                           allow_empty=False)
 
