@@ -72,6 +72,8 @@ class ListDataSetCitizensView(APIView):
 
         citizens = (Citizen.objects
                     .filter(data_set=data_set).order_by('citizen_id')
+                    # .prefetch_related('to_citizen_relatives')
+                    # .prefetch_related('from_citizen_relatives')
                     .prefetch_related('relatives').all())
         response_data = {
             'data': CitizenSerializer(citizens, many=True).data

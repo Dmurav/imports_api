@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime
 
@@ -18,6 +19,9 @@ def validate_has_letter_or_digit(string):
         raise serializers.ValidationError('Must contain digit or latin/russian letter.')
 
 
+logger = logging.getLogger()
+
+
 class NoUnknownFieldsSerializer(serializers.Serializer):
     _unknown_fields = None
 
@@ -34,7 +38,7 @@ class NoUnknownFieldsSerializer(serializers.Serializer):
 
 class CitizenRelativesField(serializers.ListField):
     def to_representation(self, mtm_manager):
-        return list(mtm_manager.all().values_list('citizen_id', flat=True))
+        return list(c.citizen_id for c in mtm_manager.all())
 
 
 class CitizenSerializer(NoUnknownFieldsSerializer):
