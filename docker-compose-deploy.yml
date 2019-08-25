@@ -20,4 +20,4 @@ services:
     env_file:
       /.api_db_env
     volumes:
-      /var/api_db:/var/lib/postgresql/data
+      - /var/api_db:/var/lib/postgresql/data
