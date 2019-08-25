@@ -1,9 +1,12 @@
+import logging
 from collections import defaultdict
 
 from django.db import transaction
 from django.db.models import Q
 
 from imports.api.models import DataSet, Citizen, CitizenRelative
+
+logger = logging.getLogger(__name__)
 
 
 @transaction.atomic
@@ -79,6 +82,7 @@ def update_citizen(data_set_id, citizen_id, citizen_data):
 
 
 def get_birthday_stats(data_set_id):
+    logger.error('Calculate birthday stats')
     data = CitizenRelative.objects.get_birthdays(data_set_id)
 
     months = defaultdict(lambda: defaultdict(lambda: 0))
@@ -102,6 +106,8 @@ def get_birthday_stats(data_set_id):
 
 
 def get_birthday_stats2(data_set_id):
+    logger.error('Calculate birthday stats')
+
     presents_count = {
         str(month): defaultdict(lambda: 0)
         for month in range(1, 12 + 1)

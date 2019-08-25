@@ -144,7 +144,40 @@ class TestListsDataSetCitizensView:
             'status_code': status.HTTP_200_OK,
             'data': has_entries({
                 'data': contains_inanyorder(
-                    *[self.citizen_to_json(citizen) for citizen in data_set.citizens.all()],
+                        *[self.citizen_to_json(citizen) for citizen in data_set.citizens.all()],
                 )
+            })
+        }))
+
+
+class TestBirthdaysView:
+    @pytest.fixture()
+    def url(self, data_set):
+        return reverse('get_birthdays', kwargs={
+            'data_set_id': data_set.id,
+        })
+
+    def test_url(self, url, data_set):
+        assert url == f'/imports/{data_set.id}/citizens/birthdays'
+
+    def test_response(self, api_client, url, data_set):
+        response = api_client.get(url)
+        assert_that(response, has_properties({
+            'status_code': status.HTTP_200_OK,
+            'data': has_entries({
+                'data': has_entries({
+                    '1': contains_inanyorder({'citizen_id': 102, 'presents': 1}),
+                    '2': [],
+                    '3': [],
+                    '4': [],
+                    '5': [],
+                    '6': [],
+                    '7': [],
+                    '8': [],
+                    '9': [],
+                    '10': contains_inanyorder({'citizen_id': 101, 'presents': 1}),
+                    '11': [],
+                    '12': []
+                })
             })
         }))

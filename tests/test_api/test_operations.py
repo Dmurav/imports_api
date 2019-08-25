@@ -8,6 +8,7 @@ from hamcrest import assert_that, has_entries, contains, empty, contains_inanyor
 from imports.api.models import DataSet, Citizen, CitizenRelative
 from imports.api.operations import (create_dataset, update_citizen, get_birthday_stats,
                                     get_birthday_stats2, )
+from imports.api.serializers import CitizenSerializer
 
 pytestmark = pytest.mark.django_db
 
@@ -230,39 +231,39 @@ class TestBirthdaysOperationCase2:
     def expected_stats(self):
         return {
             '1': contains_inanyorder(
-                {'citizen_id': 10, 'presents': 1},
-                {'citizen_id': 40, 'presents': 1},
-                {'citizen_id': 50, 'presents': 1},
+                    {'citizen_id': 10, 'presents': 1},
+                    {'citizen_id': 40, 'presents': 1},
+                    {'citizen_id': 50, 'presents': 1},
             ),
             '2': [],
             '3': [],
             '4': [],
             '5': [],
             '6': contains_inanyorder(
-                {'citizen_id': 10, 'presents': 1},
-                {'citizen_id': 20, 'presents': 1},
-                {'citizen_id': 40, 'presents': 2},
+                    {'citizen_id': 10, 'presents': 1},
+                    {'citizen_id': 20, 'presents': 1},
+                    {'citizen_id': 40, 'presents': 2},
             ),
             '7': contains_inanyorder(
-                {'citizen_id': 10, 'presents': 2},
-                {'citizen_id': 20, 'presents': 1},
-                {'citizen_id': 40, 'presents': 1},
-                {'citizen_id': 60, 'presents': 1},
-                {'citizen_id': 70, 'presents': 1},
-                {'citizen_id': 80, 'presents': 1},
+                    {'citizen_id': 10, 'presents': 2},
+                    {'citizen_id': 20, 'presents': 1},
+                    {'citizen_id': 40, 'presents': 1},
+                    {'citizen_id': 60, 'presents': 1},
+                    {'citizen_id': 70, 'presents': 1},
+                    {'citizen_id': 80, 'presents': 1},
             ),
             '8': [],
             '9': [],
             '10': [],
             '11': [],
             '12': contains_inanyorder(
-                {'citizen_id': 20, 'presents': 1},
-                {'citizen_id': 50, 'presents': 1},
-                {'citizen_id': 60, 'presents': 1},
-                {'citizen_id': 70, 'presents': 1},
+                    {'citizen_id': 20, 'presents': 1},
+                    {'citizen_id': 50, 'presents': 1},
+                    {'citizen_id': 60, 'presents': 1},
+                    {'citizen_id': 70, 'presents': 1},
             )
         }
 
-    def test_stats(self, data_set, expected_stats):
+    def test_stats(self, data_set, expected_stats, create_citizens_data):
         stats = get_birthday_stats2(data_set.id)
         assert_that(stats, has_entries(expected_stats))

@@ -6,7 +6,7 @@ from rest_framework import status, serializers
 from rest_framework.views import APIView
 
 from imports.api.models import Citizen, DataSet
-from imports.api.operations import create_dataset, update_citizen
+from imports.api.operations import create_dataset, update_citizen, get_birthday_stats2
 from imports.api.serializers import (CreateDataSetSerializer, CitizenSerializer,
                                      UpdateCitizenSerializer, )
 
@@ -83,13 +83,16 @@ class ListDataSetCitizensView(APIView):
 
 
 class DataSetBirthdaysView(APIView):
-    def get(self, request, *args, **kwargs):
-        data = {
-            'args': args,
-            'kwargs': kwargs,
-            'description': "Number of citizen relatives with birthdays in each month."
+    def get(self, request, data_set_id):
+        try:
+            DataSet.objects.get(id=data_set_id)
+        except DataSet.DoesNotExist as e:
+            raise NotFound(detail=e)
+
+        response_data = {
+            'data': get_birthday_stats2(data_set_id=data_set_id)
         }
-        return Response(data=data)
+        return Response(data=response_data, status=status.HTTP_200_OK)
 
 
 class DataSetAgePercentiles(APIView):
