@@ -15,6 +15,7 @@ django-rest-framework = "*"
 uwsgi = "*"
 psycopg2 = "*"
 django-extensions = "*"
+numpy = "*"
 
 [requires]
 python_version = "3.7"

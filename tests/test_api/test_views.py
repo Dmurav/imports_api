@@ -181,3 +181,25 @@ class TestBirthdaysView:
                 })
             })
         }))
+
+
+class TestTownAgePercentilesView:
+    @pytest.fixture()
+    def url(self, data_set):
+        return reverse('get_age_percentiles', kwargs={
+            'data_set_id': data_set.id,
+        })
+
+    def test_url(self, url, data_set):
+        assert url == f'/imports/{data_set.id}/towns/stat/percentile/age'
+
+    def test_response(self, api_client, url, data_set):
+        response = api_client.get(url)
+        assert_that(response, has_properties({
+            'status_code': status.HTTP_200_OK,
+            'data': has_entries({
+                'data': contains_inanyorder(
+                    {'town': 'Москва', 'p50': 28.0, 'p75': 29.0, 'p99': 29.96}
+                )
+            }),
+        }))

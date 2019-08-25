@@ -1,10 +1,13 @@
 import logging
 from collections import defaultdict
+from datetime import datetime
 
+import numpy as np
 from django.db import transaction
 from django.db.models import Q
 
 from imports.api.models import DataSet, Citizen, CitizenRelative
+from imports.utils import calculate_age
 
 logger = logging.getLogger(__name__)
 
@@ -133,3 +136,26 @@ def get_birthday_stats2(data_set_id):
             })
 
     return result
+
+
+def get_age_percentiles_per_town(data_set_id):
+    current_date = datetime.utcnow().date()
+
+    citizens = Citizen.objects.filter(data_set_id=data_set_id).all()
+
+    ages_per_town = defaultdict(lambda: [])
+    for citizen in citizens:
+        age = calculate_age(current_date, citizen.birth_date)
+        ages_per_town[citizen.town].append(age)
+
+    result = []
+    for town, ages in ages_per_town.items():
+        p50, p75, p99 = (np.percentile(ages, [50, 75, 99], interpolation='linear').round(2))
+        result.append({
+            'town': town,
+            'p50': p50,
+            'p75': p75,
+            'p99': p99,
+        })
+
+    return sorted(result, key=lambda el: el['town'])

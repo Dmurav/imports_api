@@ -23,6 +23,7 @@ services:
     working_dir: /project
     environment:
       PYTHONPATH: '/:/project:$PYTHONPATH'
+    command: pytest -sv
   test_db:
     image: postgres:11.5
     environment:
