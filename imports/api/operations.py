@@ -99,3 +99,31 @@ def get_birthday_stats(data_set_id):
             })
 
     return result
+
+
+def get_birthday_stats2(data_set_id):
+    presents_count = {
+        str(month): defaultdict(lambda: 0)
+        for month in range(1, 12 + 1)
+    }
+
+    citizens = Citizen.objects.filter(
+            data_set_id=data_set_id).prefetch_related('relatives').all()
+    for citizen in citizens:
+        for relative in citizen.relatives.all():
+            month = str(citizen.birth_date.month)
+            presents_count[month][relative.citizen_id] += 1
+
+    result = {
+        str(month): []
+        for month in range(1, 12 + 1)
+    }
+
+    for month in result:
+        for citizen_id in presents_count[month]:
+            result[month].append({
+                'citizen_id': citizen_id,
+                'presents': presents_count[month][citizen_id]
+            })
+
+    return result

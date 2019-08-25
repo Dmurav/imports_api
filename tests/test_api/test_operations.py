@@ -6,7 +6,8 @@ from django.db.models import F
 from hamcrest import assert_that, has_entries, contains, empty, contains_inanyorder, has_properties
 
 from imports.api.models import DataSet, Citizen, CitizenRelative
-from imports.api.operations import create_dataset, update_citizen, get_birthday_stats
+from imports.api.operations import (create_dataset, update_citizen, get_birthday_stats,
+                                    get_birthday_stats2, )
 
 pytestmark = pytest.mark.django_db
 
@@ -94,53 +95,174 @@ class TestUpdateCitizenOperation:
         }))
 
 
-class TestBirthdaysOperation:
+@pytest.mark.parametrize('create_citizens_data', [[]])
+def test_birthday_stats_for_empty_data_set(data_set, create_citizens_data):
+    stats = get_birthday_stats2(data_set.id)
+    assert_that(stats, has_entries({
+        str(month): [] for month in range(1, 12 + 1)
+    }))
+
+
+class TestBirthdaysOperationCase1:
     @pytest.fixture()
-    def create_citizens_data(self):
+    def base_citizen_data(self):
+        return {
+            'town': 'Москва',
+            'street': 'Новая',
+            'building': '16к2стр5',
+            'apartment': 1,
+            'name': 'Александр',
+            'gender': 'male',
+        }
+
+    @pytest.fixture()
+    def create_citizens_data(self, base_citizen_data):
         data = [
             {
                 'citizen_id': 101,
-                'town': 'Москва',
-                'street': 'Новая',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Александр',
                 'birth_date': date(year=1990, month=1, day=12),
-                'gender': 'male',
                 'relatives': [102],
             },
             {
                 'citizen_id': 102,
-                'town': 'Москва',
-                'street': 'Льва Толстого',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Иван',
                 'birth_date': date(year=1993, month=10, day=25),
-                'gender': 'male',
                 'relatives': [101],
             },
             {
                 'citizen_id': 103,
-                'town': 'Москва',
-                'street': 'Другая',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Татьяна',
                 'birth_date': date(year=1988, month=6, day=11),
-                'gender': 'female',
                 'relatives': [],
             }
         ]
-        return data
+        return [{**el, **base_citizen_data} for el in data]
 
-    def test_stats(self, data_set):
-        stats = get_birthday_stats(data_set.id)
-        print(stats)
+    @pytest.fixture()
+    def expected_stats(self):
+        return {
+            '1': contains_inanyorder({'citizen_id': 102, 'presents': 1}),
+            '2': [],
+            '3': [],
+            '4': [],
+            '5': [],
+            '6': [],
+            '7': [],
+            '8': [],
+            '9': [],
+            '10': contains_inanyorder({'citizen_id': 101, 'presents': 1}),
+            '11': [],
+            '12': []
+        }
 
-    @pytest.mark.parametrize('create_citizens_data', [[]])
-    def test_empty_data_set(self, data_set, create_citizens_data):
+    def test_stats(self, data_set, expected_stats):
         stats = get_birthday_stats(data_set.id)
-        assert_that(stats, has_entries({
-            str(month): [] for month in range(1, 12 + 1)
-        }))
+        assert_that(stats, expected_stats)
+
+
+class TestBirthdaysOperationCase2:
+    @pytest.fixture()
+    def base_citizen_data(self):
+        return {
+            'town': 'Москва',
+            'street': 'Новая',
+            'building': '16к2стр5',
+            'apartment': 1,
+            'name': 'Александр',
+            'gender': 'male',
+        }
+
+    @pytest.fixture()
+    def create_citizens_data(self, base_citizen_data):
+        data = [
+            {
+                'citizen_id': 10,
+                'birth_date': date(year=1990, month=7, day=12),
+                'relatives': [20, 60, 70, 80],
+            },
+            {
+                'citizen_id': 20,
+                'birth_date': date(year=1993, month=1, day=25),
+                'relatives': [10, 40, 50],
+            },
+            {
+                'citizen_id': 30,
+                'birth_date': date(year=1988, month=10, day=11),
+                'relatives': [],
+            },
+            {
+                'citizen_id': 40,
+                'birth_date': date(year=1988, month=12, day=11),
+                'relatives': [20, 50, 60, 70],
+            },
+            {
+                'citizen_id': 50,
+                'birth_date': date(year=1988, month=6, day=11),
+                'relatives': [20, 40],
+            },
+            {
+                'citizen_id': 60,
+                'birth_date': date(year=1988, month=6, day=11),
+                'relatives': [10, 40],
+            },
+            {
+                'citizen_id': 70,
+                'birth_date': date(year=1988, month=7, day=11),
+                'relatives': [10, 40],
+            },
+            {
+                'citizen_id': 80,
+                'birth_date': date(year=1988, month=7, day=11),
+                'relatives': [10],
+            },
+            {
+                'citizen_id': 90,
+                'birth_date': date(year=1988, month=11, day=11),
+                'relatives': [],
+            },
+            {
+                'citizen_id': 100,
+                'birth_date': date(year=1988, month=11, day=11),
+                'relatives': [],
+            },
+        ]
+        return [{**el, **base_citizen_data} for el in data]
+
+    @pytest.fixture()
+    def expected_stats(self):
+        return {
+            '1': contains_inanyorder(
+                {'citizen_id': 10, 'presents': 1},
+                {'citizen_id': 40, 'presents': 1},
+                {'citizen_id': 50, 'presents': 1},
+            ),
+            '2': [],
+            '3': [],
+            '4': [],
+            '5': [],
+            '6': contains_inanyorder(
+                {'citizen_id': 10, 'presents': 1},
+                {'citizen_id': 20, 'presents': 1},
+                {'citizen_id': 40, 'presents': 2},
+            ),
+            '7': contains_inanyorder(
+                {'citizen_id': 10, 'presents': 2},
+                {'citizen_id': 20, 'presents': 1},
+                {'citizen_id': 40, 'presents': 1},
+                {'citizen_id': 60, 'presents': 1},
+                {'citizen_id': 70, 'presents': 1},
+                {'citizen_id': 80, 'presents': 1},
+            ),
+            '8': [],
+            '9': [],
+            '10': [],
+            '11': [],
+            '12': contains_inanyorder(
+                {'citizen_id': 20, 'presents': 1},
+                {'citizen_id': 50, 'presents': 1},
+                {'citizen_id': 60, 'presents': 1},
+                {'citizen_id': 70, 'presents': 1},
+            )
+        }
+
+    def test_stats(self, data_set, expected_stats):
+        stats = get_birthday_stats2(data_set.id)
+        assert_that(stats, has_entries(expected_stats))
