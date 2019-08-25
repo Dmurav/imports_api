@@ -1,0 +1,21 @@
+version: "3.5"
+services:
+  api:
+    build:
+      dockerfile: docker/api.base.dockerfile
+      context: .
+    image: api.base:latest
+    restart: always
+    ports:
+      - 8080:8080
+    volumes:
+      - /api_secrets.py:/api_secrets.py
+    links:
+      - db
+    command: python imports/manage.py runserver 0.0.0.0:8080
+  db:
+    image: postgres:11.5
+    env_file:
+      /.api_db_env
+    volumes:
+      /var/api_db:/var/lib/postgresql/data
