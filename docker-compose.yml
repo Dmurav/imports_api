@@ -51,3 +51,5 @@ services:
       POSTGRES_DB: imports
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+    ports:
+      - 5532:5432

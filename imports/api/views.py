@@ -1,6 +1,28 @@
+from django.db import transaction
+from rest_framework.generics import CreateAPIView, GenericAPIView
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK
+from rest_framework import status, serializers
 from rest_framework.views import APIView
+
+from imports.api.operations import create_dataset
+from imports.api.serializers import CreateDataSetSerializer
+
+
+class CreateDataSetView(APIView):
+    def create_dataset(self, data):
+        serializer = CreateDataSetSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return create_dataset(citizens=serializer.validated_data['citizens'])
+
+    def post(self, request):
+        dataset_id = self.create_dataset(data=request.data)
+        data = {
+            'data': {
+                'import_id': dataset_id,
+            }
+        }
+        return Response(data=data, status=status.HTTP_201_CREATED)
+
 
 
 class DataSetCitizenView(APIView):
@@ -11,16 +33,6 @@ class DataSetCitizenView(APIView):
             'description': 'Update citizen data.'
         }
         return Response(data=data)
-
-
-class CreateDataSetView(APIView):
-    def post(self, request, *args, **kwargs):
-        data = {
-            'args': args,
-            'kwargs': kwargs,
-            'description': 'Create new dataset',
-        }
-        return Response(data=data, status=HTTP_200_OK)
 
 
 class ListDataSetCitizensView(APIView):
