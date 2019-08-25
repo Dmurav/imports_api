@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.db import transaction
 from django.db.models import Q
 
@@ -74,3 +76,26 @@ def update_citizen(data_set_id, citizen_id, citizen_data):
 
     citizen.refresh_from_db()
     return citizen
+
+
+def get_birthday_stats(data_set_id):
+    data = CitizenRelative.objects.get_birthdays(data_set_id)
+
+    months = defaultdict(lambda: defaultdict(lambda: 0))
+    for elem in data:
+        citizen_id = elem['citizen_id']
+        birth_date = elem['relative_birth_date']
+        month = str(birth_date.month)
+        months[month][citizen_id] += 1
+
+    result = {}
+    for month in range(1, 12 + 1):
+        month = str(month)
+        result[month] = []
+        for citizen_id in months[month]:
+            result[month].append({
+                'citizen_id': citizen_id,
+                'presents': months[month][citizen_id]
+            })
+
+    return result

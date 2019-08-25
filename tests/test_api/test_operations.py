@@ -6,7 +6,7 @@ from django.db.models import F
 from hamcrest import assert_that, has_entries, contains, empty, contains_inanyorder, has_properties
 
 from imports.api.models import DataSet, Citizen, CitizenRelative
-from imports.api.operations import create_dataset, update_citizen
+from imports.api.operations import create_dataset, update_citizen, get_birthday_stats
 
 pytestmark = pytest.mark.django_db
 
@@ -95,4 +95,52 @@ class TestUpdateCitizenOperation:
 
 
 class TestBirthdaysOperation:
-    pass
+    @pytest.fixture()
+    def create_citizens_data(self):
+        data = [
+            {
+                'citizen_id': 101,
+                'town': 'Москва',
+                'street': 'Новая',
+                'building': '16к2стр5',
+                'apartment': 1,
+                'name': 'Александр',
+                'birth_date': date(year=1990, month=1, day=12),
+                'gender': 'male',
+                'relatives': [102],
+            },
+            {
+                'citizen_id': 102,
+                'town': 'Москва',
+                'street': 'Льва Толстого',
+                'building': '16к2стр5',
+                'apartment': 1,
+                'name': 'Иван',
+                'birth_date': date(year=1993, month=10, day=25),
+                'gender': 'male',
+                'relatives': [101],
+            },
+            {
+                'citizen_id': 103,
+                'town': 'Москва',
+                'street': 'Другая',
+                'building': '16к2стр5',
+                'apartment': 1,
+                'name': 'Татьяна',
+                'birth_date': date(year=1988, month=6, day=11),
+                'gender': 'female',
+                'relatives': [],
+            }
+        ]
+        return data
+
+    def test_stats(self, data_set):
+        stats = get_birthday_stats(data_set.id)
+        print(stats)
+
+    @pytest.mark.parametrize('create_citizens_data', [[]])
+    def test_empty_data_set(self, data_set, create_citizens_data):
+        stats = get_birthday_stats(data_set.id)
+        assert_that(stats, has_entries({
+            str(month): [] for month in range(1, 12 + 1)
+        }))

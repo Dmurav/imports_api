@@ -106,8 +106,24 @@ def data_set(create_citizens_data):
         data.pop('relatives')
         created.append(Citizen.objects.create(**data, data_set=ds))
 
-    CitizenRelative.objects.create(citizen=created[0], relative=created[1])
-    CitizenRelative.objects.create(citizen=created[1], relative=created[0])
+    pairs = {}
+    for citizen in create_citizens_data:
+        citizen_id = citizen['citizen_id']
+        relatives = set(citizen['relatives'])
+        for relative_id in relatives:
+            assert citizen_id not in relatives
+            pair = (min(citizen_id, relative_id), max(citizen_id, relative_id))
+            pairs[pair] = pairs.get(pair, 0) + 1
+
+    for _, count in pairs.items():
+        assert count == 2
+
+    for citizen_id, relative_id in pairs.keys():
+        citizen = Citizen.objects.get(citizen_id=citizen_id, data_set=ds)
+        relative = Citizen.objects.get(citizen_id=relative_id, data_set=ds)
+        CitizenRelative.objects.create(citizen=citizen, relative=relative)
+        CitizenRelative.objects.create(citizen=relative, relative=citizen)
+
     return ds
 
 
