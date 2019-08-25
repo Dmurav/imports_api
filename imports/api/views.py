@@ -64,13 +64,20 @@ class UpdateCitizenView(APIView):
 
 
 class ListDataSetCitizensView(APIView):
-    def get(self, request, *args, **kwargs):
-        data = {
-            'args': args,
-            'kwargs': kwargs,
-            'description': "View all citizens in dataset."
+    def get(self, request, data_set_id):
+        try:
+            data_set = DataSet.objects.get(id=data_set_id)
+        except DataSet.DoesNotExist as e:
+            raise NotFound(e)
+
+        citizens = (Citizen.objects
+                    .filter(data_set=data_set).order_by('citizen_id')
+                    .prefetch_related('relatives').all())
+        response_data = {
+            'data': CitizenSerializer(citizens, many=True).data
         }
-        return Response(data=data)
+
+        return Response(data=response_data, status=status.HTTP_200_OK)
 
 
 class DataSetBirthdaysView(APIView):

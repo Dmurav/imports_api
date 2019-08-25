@@ -1,6 +1,6 @@
 import pytest
 from django.urls import reverse
-from hamcrest import assert_that, has_entries, has_properties
+from hamcrest import assert_that, has_entries, has_properties, contains_inanyorder
 from rest_framework import status
 
 pytestmark = pytest.mark.django_db
@@ -113,3 +113,56 @@ class TestUpdateCitizenView():
             })
         }))
 
+
+class TestListsDataSetCitizensView:
+    @pytest.fixture()
+    def url(self, data_set):
+        return reverse('list_citizens', kwargs={
+            'data_set_id': data_set.id,
+        })
+
+    def test_url(self, url, data_set):
+        assert url == f'/imports/{data_set.id}/citizens'
+
+    def test_response(self, api_client, url, data_set, citizen1, citizen2, citizen3):
+        response = api_client.get(url)
+        assert_that(response, has_properties({
+            'status_code': status.HTTP_200_OK,
+            'data': has_entries({
+                'data': contains_inanyorder(
+                        {
+                            'citizen_id': citizen1.citizen_id,
+                            'town': citizen1.town,
+                            'street': citizen1.street,
+                            'building': citizen1.building,
+                            'apartment': citizen1.apartment,
+                            'name': citizen1.name,
+                            'birth_date': citizen1.birth_date.strftime('%d.%m.%Y'),
+                            'gender': citizen1.gender,
+                            'relatives': citizen1.relatives_ids,
+                        },
+                        {
+                            'citizen_id': citizen2.citizen_id,
+                            'town': citizen2.town,
+                            'street': citizen2.street,
+                            'building': citizen2.building,
+                            'apartment': citizen2.apartment,
+                            'name': citizen2.name,
+                            'birth_date': citizen2.birth_date.strftime('%d.%m.%Y'),
+                            'gender': citizen2.gender,
+                            'relatives': citizen2.relatives_ids,
+                        },
+                        {
+                            'citizen_id': citizen3.citizen_id,
+                            'town': citizen3.town,
+                            'street': citizen3.street,
+                            'building': citizen3.building,
+                            'apartment': citizen3.apartment,
+                            'name': citizen3.name,
+                            'birth_date': citizen3.birth_date.strftime('%d.%m.%Y'),
+                            'gender': citizen3.gender,
+                            'relatives': citizen3.relatives_ids,
+                        },
+                )
+            })
+        }))
