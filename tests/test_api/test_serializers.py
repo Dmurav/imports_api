@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 import pytest
 from hamcrest import assert_that, has_entries
 
-from imports.api.serializers import CreateCitizenSerializer
+from imports.api.serializers import CreateCitizenSerializer, CreateDataSetSerializer
 from imports.utils import latin_russian_digit
 
 
@@ -17,27 +17,12 @@ def test_latin_russian_digit():
 
 class TestCreateCitizenSerializer:
     @pytest.fixture()
-    def gender(self):
-        return 'male'
+    def citizen(self, citizens):
+        """Valid citizen data."""
+        return citizens[0]
 
-    @pytest.fixture()
-    def citizen_data(self, gender):
-        data = {
-            'citizen_id': 1,
-            'town': 'Москва',
-            'street': 'Льва Толстого',
-            'building': '16к2стр5',
-            'apartment': 1,
-            'name': 'Иванов Иван Иванович',
-            'birth_date': '29.05.1990',
-            'gender': gender,
-            'relatives': [20],
-        }
-        return data
-
-    @pytest.mark.parametrize('gender', ('male', 'female'))
-    def test_valid_data(self, citizen_data, gender):
-        s = CreateCitizenSerializer(data=citizen_data)
+    def test_valid_data(self, citizen):
+        s = CreateCitizenSerializer(data=citizen)
         s.is_valid()
         assert_that(s.validated_data, has_entries({
             'citizen_id': 1,
@@ -47,8 +32,8 @@ class TestCreateCitizenSerializer:
             'apartment': 1,
             'name': 'Иванов Иван Иванович',
             'birth_date': date(year=1990, month=5, day=29),
-            'gender': gender,
-            'relatives': [20],
+            'gender': 'male',
+            'relatives': [2],
         }))
 
     @pytest.mark.parametrize(('action', 'field', 'value', 'is_valid'), [
@@ -134,11 +119,43 @@ class TestCreateCitizenSerializer:
         # unknown field
         ['set', 'unknown', 1, False]
     ])
-    def test_validation_errors(self, citizen_data, action, field, value, is_valid):
+    def test_validation_errors(self, citizen, action, field, value, is_valid):
         if action == 'set':
-            citizen_data[field] = value
+            citizen[field] = value
         elif action == 'delete':
-            citizen_data.pop(field, None)
+            citizen.pop(field, None)
 
-        s = CreateCitizenSerializer(data=citizen_data)
+        s = CreateCitizenSerializer(data=citizen)
         assert is_valid == s.is_valid(raise_exception=False)
+
+
+class TestDataSetSerializer:
+    def test_valid(self, citizens):
+        data = {
+            'citizens': citizens
+        }
+        s = CreateDataSetSerializer(data=data)
+        assert s.is_valid(raise_exception=False)
+
+    def test_no_empty_citizens(self):
+        data = {'citizens': []}
+        s = CreateDataSetSerializer(data=data)
+        assert not s.is_valid(raise_exception=False)
+
+    def test_repeated_citizen_ids(self, citizens):
+        citizens[0]['citizen_id'] = 1
+        citizens[0]['relatives'] = []
+        citizens[1]['citizen_id'] = 1
+        citizens[1]['relatives'] = []
+        data = {'citizens': citizens}
+        s = CreateDataSetSerializer(data=data)
+        assert not s.is_valid(raise_exception=False)
+
+    def test_bad_relatives(self, citizens):
+        citizens[0]['citizen_id'] = 1
+        citizens[0]['relatives'] = []
+        citizens[1]['citizen_id'] = 2
+        citizens[1]['relatives'] = [1]
+        data = {'citizens': citizens}
+        s = CreateDataSetSerializer(data=data)
+        assert not s.is_valid(raise_exception=False)

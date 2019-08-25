@@ -19,10 +19,15 @@ def validate_has_letter_or_digit(string):
 
 
 class NoUnknownFieldsSerializer(serializers.Serializer):
+    _unknown_fields = None
+
+    def to_internal_value(self, data):
+        self._unknown_fields = set(data.keys()) - set(self.fields.keys())
+        return super().to_internal_value(data)
+
     def validate(self, data):
-        unknown_fields = set(self.initial_data.keys()) - set(self.fields.keys())
-        if unknown_fields:
-            raise serializers.ValidationError(f'Unknown fields for citizen {unknown_fields}')
+        if self._unknown_fields:
+            raise serializers.ValidationError(f'Unknown fields: {self._unknown_fields}')
         return super().validate(data)
 
 
@@ -59,4 +64,40 @@ class CreateCitizenSerializer(NoUnknownFieldsSerializer):
             raise serializers.ValidationError('Birth date must be less then current date.')
         if data['citizen_id'] in data['relatives']:
             raise serializers.ValidationError('Citizen can not be relative to itself.')
+        return super().validate(data)
+
+
+class CreateDataSetSerializer(NoUnknownFieldsSerializer):
+    citizens = serializers.ListSerializer(child=CreateCitizenSerializer(),
+                                          allow_null=False,
+                                          allow_empty=False)
+
+    def validate(self, data):
+        citizens = data['citizens']
+
+        citizen_ids = set()
+        pairs = set()
+
+        for c in citizens:
+            # check uniqueness of citizen_id in dataset
+            cid = c['citizen_id']
+            if cid not in citizen_ids:
+                citizen_ids.add(cid)
+            else:
+                raise serializers.ValidationError(f'Duplicated citizen id {cid}')
+
+            # check relatives relation
+            for rid in c['relatives']:
+                pair = (min(cid, rid), max(cid, rid))
+                if pair in pairs:
+                    pairs.remove(pair)
+                else:
+                    pairs.add(pair)
+
+        if pairs:
+            raise serializers.ValidationError(
+                    f'Relatives relation for citizen pairs {pairs} in unsymmetric.')
+
+        del citizen_ids
+        del pairs
         return super().validate(data)
