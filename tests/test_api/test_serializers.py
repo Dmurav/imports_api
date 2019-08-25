@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 import pytest
 from hamcrest import assert_that, has_entries
 
-from imports.api.serializers import CritizenSerializer, CreateDataSetSerializer
+from imports.api.serializers import CitizenSerializer, CreateDataSetSerializer
 from imports.utils import latin_russian_digit
 
 
@@ -22,7 +22,7 @@ class TestCitizenSerializer:
         return citizens[0]
 
     def test_valid_data(self, citizen):
-        s = CritizenSerializer(data=citizen)
+        s = CitizenSerializer(data=citizen)
         s.is_valid()
         assert_that(s.validated_data, has_entries({
             'citizen_id': 1,
@@ -125,25 +125,30 @@ class TestCitizenSerializer:
         elif action == 'delete':
             citizen.pop(field, None)
 
-        s = CritizenSerializer(data=citizen)
+        s = CitizenSerializer(data=citizen)
         assert is_valid == s.is_valid(raise_exception=False)
 
     @pytest.mark.parametrize('data', [
-        {'citizen_id': 1},
         {'town': 'Москва', 'birth_date': '23.03.1990'},
         {'apartment': 4},
+        {'relatives': []},
     ])
     def test_partial_data_validation(self, data):
-        s = CritizenSerializer(data=data, partial=True)
+        s = CitizenSerializer(data=data, partial=True)
         assert s.is_valid(raise_exception=False)
 
+    def test_partial_forbids_citizen_id(self):
+        s = CitizenSerializer(data={'citizen_id': 1, 'town': 'Москва'}, partial=True)
+        assert not s.is_valid(raise_exception=False)
+
     def test_partial_requires_at_least_one_field(self):
-        s = CritizenSerializer(data={}, partial=True)
+        s = CitizenSerializer(data={}, partial=True)
         assert not s.is_valid(raise_exception=False)
 
     def test_partial_unknown_fields(self):
-        s = CritizenSerializer(data={'unknown': 1}, partial=True)
+        s = CitizenSerializer(data={'unknown': 1}, partial=True)
         assert not s.is_valid(raise_exception=False)
+
 
 class TestDataSetSerializer:
     def test_valid(self, citizens):

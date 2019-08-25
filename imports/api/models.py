@@ -36,8 +36,12 @@ class Citizen(CreatedUpdatedMixin, models.Model):
     birth_date = models.DateField(null=False)
     gender = models.CharField(null=False, choices=GENDER_CHOICES, max_length=128)
 
-    data_set = models.ForeignKey(to='DataSet', on_delete=models.CASCADE)
+    data_set = models.ForeignKey(to='DataSet', on_delete=models.CASCADE, related_name='citizens')
     relatives = models.ManyToManyField(through='CitizenRelative', to='Citizen')
+
+    @property
+    def relatives_ids(self):
+        return list(self.relatives.values_list('citizen_id', flat=True))
 
     def __str__(self):
         return (f"<Citizen dataset: {self.data_set_id}, "

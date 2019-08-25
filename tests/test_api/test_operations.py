@@ -1,54 +1,55 @@
 from datetime import date
 
 import pytest
-from hamcrest import assert_that, has_entries, contains, empty, contains_inanyorder
+from hamcrest import assert_that, has_entries, contains, empty, contains_inanyorder, has_properties
 
 from imports.api.models import DataSet, Citizen, CitizenRelative
-from imports.api.operations import create_dataset
+from imports.api.operations import create_dataset, update_citizen
 
 pytestmark = pytest.mark.django_db
 
 
-class TestCreateDataSetOperation:
-    @pytest.fixture()
-    def create_citizens_data(self):
-        data = [
-            {
-                'citizen_id': 101,
-                'town': 'Москва',
-                'street': 'Новая',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Александр',
-                'birth_date': date(year=1990, month=1, day=12),
-                'gender': 'male',
-                'relatives': [102],
-            },
-            {
-                'citizen_id': 102,
-                'town': 'Москва',
-                'street': 'Льва Толстого',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Иван',
-                'birth_date': date(year=1993, month=10, day=25),
-                'gender': 'male',
-                'relatives': [101],
-            },
-            {
-                'citizen_id': 103,
-                'town': 'Москва',
-                'street': 'Другая',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Татьяна',
-                'birth_date': date(year=1988, month=6, day=11),
-                'gender': 'female',
-                'relatives': [],
-            }
-        ]
-        return data
+@pytest.fixture()
+def create_citizens_data():
+    data = [
+        {
+            'citizen_id': 101,
+            'town': 'Москва',
+            'street': 'Новая',
+            'building': '16к2стр5',
+            'apartment': 1,
+            'name': 'Александр',
+            'birth_date': date(year=1990, month=1, day=12),
+            'gender': 'male',
+            'relatives': [102],
+        },
+        {
+            'citizen_id': 102,
+            'town': 'Москва',
+            'street': 'Льва Толстого',
+            'building': '16к2стр5',
+            'apartment': 1,
+            'name': 'Иван',
+            'birth_date': date(year=1993, month=10, day=25),
+            'gender': 'male',
+            'relatives': [101],
+        },
+        {
+            'citizen_id': 103,
+            'town': 'Москва',
+            'street': 'Другая',
+            'building': '16к2стр5',
+            'apartment': 1,
+            'name': 'Татьяна',
+            'birth_date': date(year=1988, month=6, day=11),
+            'gender': 'female',
+            'relatives': [],
+        }
+    ]
+    return data
 
+
+class TestCreateDataSetOperation:
     @pytest.fixture
     def created_data_set_id(self, create_citizens_data):
         return create_dataset(citizens=create_citizens_data)
@@ -85,4 +86,85 @@ class TestCreateDataSetOperation:
                     (citizen_101.id, citizen_102.id),
                     (citizen_102.id, citizen_101.id),
             )
+        }))
+
+
+class TestUpdateCitizenOperation:
+    @pytest.fixture()
+    def create_citizens_data(self):
+        data = [
+            {
+                'citizen_id': 101,
+                'town': 'Москва',
+                'street': 'Новая',
+                'building': '16к2стр5',
+                'apartment': 1,
+                'name': 'Александр',
+                'birth_date': date(year=1990, month=1, day=12),
+                'gender': 'male',
+                'relatives': [],
+            },
+            {
+                'citizen_id': 102,
+                'town': 'Москва',
+                'street': 'Льва Толстого',
+                'building': '16к2стр5',
+                'apartment': 1,
+                'name': 'Иван',
+                'birth_date': date(year=1993, month=10, day=25),
+                'gender': 'male',
+                'relatives': [],
+            },
+            {
+                'citizen_id': 103,
+                'town': 'Москва',
+                'street': 'Другая',
+                'building': '16к2стр5',
+                'apartment': 1,
+                'name': 'Татьяна',
+                'birth_date': date(year=1988, month=6, day=11),
+                'gender': 'female',
+                'relatives': [],
+            }
+        ]
+        return data
+
+    @pytest.fixture()
+    def citizens(self, create_citizens_data):
+        create_dataset(citizens=create_citizens_data)
+        return list(Citizen.objects.all())
+
+    def test_update_one_citizen(self, citizens):
+        citizen = citizens[0]
+        data = {
+            'town': 'СПБ',
+            'street': 'Новая',
+            'building': 'some',
+            'apartment': 100,
+            'name': 'Дима',
+            'birth_date': date(year=1986, month=6, day=14),
+            'gender': 'make',
+        }
+        updated = update_citizen(data_set_id=citizen.data_set_id,
+                                 citizen_id=citizen.citizen_id,
+                                 citizen_data=data)
+        assert_that(updated, has_properties(data))
+
+    def test_update_relatives(self, citizens):
+        citizen1, citizen2, citizen3 = citizens
+
+        update_citizen(data_set_id=citizen1.data_set_id,
+                       citizen_id=citizen1.citizen_id,
+                       citizen_data={
+                           'relatives': [citizen2.citizen_id, citizen3.citizen_id]
+                       })
+
+        assert_that({
+            'citizen1': citizen1,
+            'citizen2': citizen2,
+            'citizen3': citizen3,
+        }, has_entries({
+            'citizen1': has_properties({'relatives_ids': [citizen2.citizen_id, citizen3.citizen_id]}),
+            'citizen2': has_properties({'relatives_ids': [citizen1.citizen_id]}),
+            'citizen3': has_properties({'relatives_ids': [citizen1.citizen_id]}),
         }))

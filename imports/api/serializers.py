@@ -32,7 +32,12 @@ class NoUnknownFieldsSerializer(serializers.Serializer):
         return super().validate(data)
 
 
-class CritizenSerializer(NoUnknownFieldsSerializer):
+class CitizenRelativesField(serializers.ListField):
+    def to_representation(self, mtm_manager):
+        return mtm_manager.all().values_list('citizen_id', flat=True)
+
+
+class CitizenSerializer(NoUnknownFieldsSerializer):
     citizen_id = serializers.IntegerField(required=True, validators=[validate_non_negative])
 
     town = serializers.CharField(required=True,
@@ -58,7 +63,7 @@ class CritizenSerializer(NoUnknownFieldsSerializer):
     gender = serializers.ChoiceField(required=True,
                                      choices=(('male', 'male'), ('female', 'female')))
 
-    relatives = serializers.ListField(child=serializers.IntegerField(), allow_empty=True)
+    relatives = CitizenRelativesField(child=serializers.IntegerField(), allow_empty=True)
 
     def validate_birth_date(self, value):
         if value >= datetime.utcnow().date():
@@ -69,6 +74,10 @@ class CritizenSerializer(NoUnknownFieldsSerializer):
         if not data:
             raise serializers.ValidationError('At last one field required')
 
+        if self.partial and data:
+            if 'citizen_id' in data:
+                raise serializers.ValidationError('Citizen id is not allowed when updating citizen')
+
         citizen_id = data.get('citizen_id')
         relatives = data.get('relatives')
         if citizen_id and relatives and citizen_id in relatives:
@@ -77,7 +86,7 @@ class CritizenSerializer(NoUnknownFieldsSerializer):
 
 
 class CreateDataSetSerializer(NoUnknownFieldsSerializer):
-    citizens = serializers.ListSerializer(child=CritizenSerializer(),
+    citizens = serializers.ListSerializer(child=CitizenSerializer(),
                                           allow_null=False,
                                           allow_empty=False)
 
@@ -110,3 +119,8 @@ class CreateDataSetSerializer(NoUnknownFieldsSerializer):
         del citizen_ids
         del pairs
         return super().validate(data)
+
+
+class UpdateCitizenSerializer(NoUnknownFieldsSerializer):
+    data_set_id = serializers.IntegerField(required=True, allow_null=False)
+    citizen_id = serializers.IntegerField(required=True, validators=[validate_non_negative])

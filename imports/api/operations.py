@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Q
 
 from imports.api.models import DataSet, Citizen, CitizenRelative
 
@@ -12,7 +13,7 @@ def create_dataset(citizens):
     for cit_data in citizens:
 
         cid = cit_data['citizen_id']
-        for rid in cit_data['relatives']:
+        for rid in set(cit_data['relatives']):
             citizen_pairs.append((cid, rid))
 
         cit_data.pop('relatives')
@@ -36,3 +37,40 @@ def create_dataset(citizens):
     CitizenRelative.objects.bulk_create(citizen_relatives)
 
     return data_set.id
+
+
+@transaction.atomic
+def update_citizen(data_set_id, citizen_id, citizen_data):
+    data_set = DataSet.objects.get(id=data_set_id)
+    citizen = Citizen.objects.get(data_set=data_set, citizen_id=citizen_id)
+    relatives = citizen_data.pop('relatives', None)
+    Citizen.objects.filter(data_set_id=data_set_id, citizen_id=citizen_id).update(**citizen_data)
+
+    if relatives is not None:
+        # check all specified relatives exist in data set
+        relatives = set(relatives)
+        existing_relatives = (Citizen.objects
+                              .filter(data_set_id=data_set_id, citizen_id__in=relatives)
+                              .values_list('citizen_id', flat=True))
+        non_existing = set(relatives) - set(existing_relatives)
+        if non_existing:
+            raise Citizen.DoesNotExist(f'No citizen with citizen_id in {non_existing}')
+
+        # clean all relatives info involving citizen
+        CitizenRelative.objects.filter(Q(citizen=citizen) | Q(relative=citizen)).delete()
+
+        # new relatives for citizen
+        new_relatives = Citizen.objects.filter(data_set_id=data_set_id, citizen_id__in=relatives)
+
+        citizen_relatives = []
+        for c in new_relatives:
+            citizen_relatives.extend([
+                CitizenRelative(citizen=citizen, relative=c),
+                CitizenRelative(citizen=c, relative=citizen),
+
+            ])
+
+        CitizenRelative.objects.bulk_create(citizen_relatives)
+
+    citizen.refresh_from_db()
+    return citizen

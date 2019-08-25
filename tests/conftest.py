@@ -3,6 +3,8 @@ from datetime import date
 import pytest
 from rest_framework.test import APIRequestFactory, APIClient
 
+from imports.api.models import Citizen, DataSet, CitizenRelative
+
 
 @pytest.fixture(scope='session')
 def api_request_factory():
@@ -52,3 +54,18 @@ def citizens():
         }
     ]
     return data
+
+
+@pytest.fixture()
+def data_set(citizens):
+    """Create data set of 3 citizens in DB."""
+    data_set = DataSet.objects.create()
+    created = []
+    for data in citizens:
+        data = data.copy()
+        data.pop('relatives')
+        created.append(Citizen.objects.create(**data, data_set=data_set))
+
+    CitizenRelative.objects.create(citizen=created[0], relative=created[1])
+    CitizenRelative.objects.create(citizen=created[1], relative=created[0])
+    return data_set
