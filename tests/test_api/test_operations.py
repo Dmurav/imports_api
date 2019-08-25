@@ -1,6 +1,8 @@
 from datetime import date
+from pprint import pprint
 
 import pytest
+from django.db.models import F
 from hamcrest import assert_that, has_entries, contains, empty, contains_inanyorder, has_properties
 
 from imports.api.models import DataSet, Citizen, CitizenRelative
@@ -90,3 +92,7 @@ class TestUpdateCitizenOperation:
             'citizen2': has_properties({'relatives_ids': contains_inanyorder(citizen1.citizen_id)}),
             'citizen3': has_properties({'relatives_ids': contains_inanyorder(citizen1.citizen_id)}),
         }))
+
+
+class TestBirthdaysOperation:
+    pass

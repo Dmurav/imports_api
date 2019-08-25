@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 from django.utils.translation import ugettext_lazy as _
 
 from django_extensions.db.fields import CreationDateTimeField, ModificationDateTimeField
@@ -49,6 +50,25 @@ class Citizen(CreatedUpdatedMixin, models.Model):
                 f"_id: {self.id})>")
 
 
+class CitizenRelativeManager(models.Manager):
+    def get_birthdays(self, data_set_id):
+        data = list(self.filter(
+                citizen__data_set_id=data_set_id).annotate(
+                relative_birth_date=F('relative__birth_date'),
+                cid=F('citizen__citizen_id'),
+                rid=F('relative__citizen_id')
+        ).values('cid', 'rid', 'relative_birth_date').distinct())
+
+        for d in data:
+            d['citizen_id'] = d['cid']
+            d.pop('cid')
+            d['relative_id'] = d['rid']
+            d.pop('rid')
+
+        return sorted(data,
+                      key=lambda d: (d['citizen_id'], d['relative_id'], d['relative_birth_date']))
+
+
 class CitizenRelative(CreatedUpdatedMixin, models.Model):
     class Meta:
         unique_together = (('citizen', 'relative'),)
@@ -57,3 +77,5 @@ class CitizenRelative(CreatedUpdatedMixin, models.Model):
                                 related_name='to_citizen_relatives')
     relative = models.ForeignKey('Citizen', null=False, on_delete=models.CASCADE,
                                  related_name='from_citizen_relatives')
+
+    objects = CitizenRelativeManager()
