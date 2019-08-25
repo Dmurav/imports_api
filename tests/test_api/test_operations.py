@@ -9,46 +9,6 @@ from imports.api.operations import create_dataset, update_citizen
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
-def create_citizens_data():
-    data = [
-        {
-            'citizen_id': 101,
-            'town': 'Москва',
-            'street': 'Новая',
-            'building': '16к2стр5',
-            'apartment': 1,
-            'name': 'Александр',
-            'birth_date': date(year=1990, month=1, day=12),
-            'gender': 'male',
-            'relatives': [102],
-        },
-        {
-            'citizen_id': 102,
-            'town': 'Москва',
-            'street': 'Льва Толстого',
-            'building': '16к2стр5',
-            'apartment': 1,
-            'name': 'Иван',
-            'birth_date': date(year=1993, month=10, day=25),
-            'gender': 'male',
-            'relatives': [101],
-        },
-        {
-            'citizen_id': 103,
-            'town': 'Москва',
-            'street': 'Другая',
-            'building': '16к2стр5',
-            'apartment': 1,
-            'name': 'Татьяна',
-            'birth_date': date(year=1988, month=6, day=11),
-            'gender': 'female',
-            'relatives': [],
-        }
-    ]
-    return data
-
-
 class TestCreateDataSetOperation:
     @pytest.fixture
     def created_data_set_id(self, create_citizens_data):
@@ -67,7 +27,7 @@ class TestCreateDataSetOperation:
         citizen_103 = Citizen.objects.get(citizen_id=103, data_set_id=created_data_set_id)
 
         citizen_relatives = list(
-            CitizenRelative.objects.all().values_list('citizen_id', 'relative_id'))
+                CitizenRelative.objects.all().values_list('citizen_id', 'relative_id'))
 
         facts = {
             'citizens_count': len(citizens_created),
@@ -91,51 +51,11 @@ class TestCreateDataSetOperation:
 
 class TestUpdateCitizenOperation:
     @pytest.fixture()
-    def create_citizens_data(self):
-        data = [
-            {
-                'citizen_id': 101,
-                'town': 'Москва',
-                'street': 'Новая',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Александр',
-                'birth_date': date(year=1990, month=1, day=12),
-                'gender': 'male',
-                'relatives': [],
-            },
-            {
-                'citizen_id': 102,
-                'town': 'Москва',
-                'street': 'Льва Толстого',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Иван',
-                'birth_date': date(year=1993, month=10, day=25),
-                'gender': 'male',
-                'relatives': [],
-            },
-            {
-                'citizen_id': 103,
-                'town': 'Москва',
-                'street': 'Другая',
-                'building': '16к2стр5',
-                'apartment': 1,
-                'name': 'Татьяна',
-                'birth_date': date(year=1988, month=6, day=11),
-                'gender': 'female',
-                'relatives': [],
-            }
-        ]
-        return data
+    def citizens(self, data_set):
+        CitizenRelative.objects.all().delete()
+        return list(data_set.citizens.all())
 
-    @pytest.fixture()
-    def citizens(self, create_citizens_data):
-        create_dataset(citizens=create_citizens_data)
-        return list(Citizen.objects.all())
-
-    def test_update_one_citizen(self, citizens):
-        citizen = citizens[0]
+    def test_update_one_citizen(self, citizen1):
         data = {
             'town': 'СПБ',
             'street': 'Новая',
@@ -145,8 +65,8 @@ class TestUpdateCitizenOperation:
             'birth_date': date(year=1986, month=6, day=14),
             'gender': 'make',
         }
-        updated = update_citizen(data_set_id=citizen.data_set_id,
-                                 citizen_id=citizen.citizen_id,
+        updated = update_citizen(data_set_id=citizen1.data_set_id,
+                                 citizen_id=citizen1.citizen_id,
                                  citizen_data=data)
         assert_that(updated, has_properties(data))
 
@@ -164,7 +84,9 @@ class TestUpdateCitizenOperation:
             'citizen2': citizen2,
             'citizen3': citizen3,
         }, has_entries({
-            'citizen1': has_properties({'relatives_ids': [citizen2.citizen_id, citizen3.citizen_id]}),
-            'citizen2': has_properties({'relatives_ids': [citizen1.citizen_id]}),
-            'citizen3': has_properties({'relatives_ids': [citizen1.citizen_id]}),
+            'citizen1': has_properties({
+                'relatives_ids': contains_inanyorder(citizen2.citizen_id, citizen3.citizen_id)
+            }),
+            'citizen2': has_properties({'relatives_ids': contains_inanyorder(citizen1.citizen_id)}),
+            'citizen3': has_properties({'relatives_ids': contains_inanyorder(citizen1.citizen_id)}),
         }))

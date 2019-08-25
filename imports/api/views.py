@@ -44,10 +44,11 @@ class UpdateCitizenView(APIView):
         if relatives and citizen_id in relatives:
             raise serializers.ValidationError('Citizen can not be relative to itself.')
 
+        citizen_validated_data = serializer.validated_data
         try:
             updated_citizen = update_citizen(data_set_id=data_set_id,
                                              citizen_id=citizen_id,
-                                             citizen_data=citizen_data)
+                                             citizen_data=citizen_validated_data)
         except models.ObjectDoesNotExist as e:
             raise NotFound(detail=e)
 

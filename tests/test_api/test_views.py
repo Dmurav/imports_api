@@ -65,4 +65,51 @@ class TestCreateDataSetView:
 
 
 class TestUpdateCitizenView():
-    pass
+    @pytest.fixture()
+    def url(self, citizen1):
+        return reverse('update_citizen', kwargs={
+            'data_set_id': citizen1.data_set_id,
+            'citizen_id': citizen1.citizen_id,
+        })
+
+    def test_url(self, url, citizen1):
+        assert url == f'/imports/{citizen1.data_set_id}/citizens/{citizen1.citizen_id}'
+
+    def test_response_on_empty_data(self, api_client, url):
+        request_data = {}
+        response = api_client.patch(url, data=request_data)
+        assert_that(response, has_properties({
+            'status_code': status.HTTP_400_BAD_REQUEST,
+        }))
+
+    def test_response_on_correct_data(self, api_client, url, citizen1, data_set):
+        request_data = {
+            'town': 'СПБ',
+            'street': 'Новая',
+            'building': 'some',
+            'apartment': 100,
+            'name': 'Дима',
+            'birth_date': '14.06.1986',
+            'gender': 'male',
+            'relatives': []
+        }
+        response = api_client.patch(url, data=request_data)
+
+        citizen1.refresh_from_db()
+        assert_that(response, has_properties({
+            'status_code': status.HTTP_200_OK,
+            'data': has_entries({
+                'data': has_entries({
+                    'citizen_id': citizen1.citizen_id,
+                    'town': 'СПБ',
+                    'street': 'Новая',
+                    'building': 'some',
+                    'apartment': 100,
+                    'name': 'Дима',
+                    'birth_date': '14.06.1986',
+                    'gender': 'male',
+                    'relatives': citizen1.relatives_ids,
+                })
+            })
+        }))
+

@@ -34,7 +34,7 @@ class NoUnknownFieldsSerializer(serializers.Serializer):
 
 class CitizenRelativesField(serializers.ListField):
     def to_representation(self, mtm_manager):
-        return mtm_manager.all().values_list('citizen_id', flat=True)
+        return list(mtm_manager.all().values_list('citizen_id', flat=True))
 
 
 class CitizenSerializer(NoUnknownFieldsSerializer):
